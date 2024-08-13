@@ -5,6 +5,9 @@ from data_sync.sender_utils.websocket_utils import (
     websocket_connectivity
 )
 import json
+from data_sync.sender_utils.utils import (
+    convert_string_to_json
+)
 
 
 class DataSyncSenderConsumer(WebsocketConsumer):
@@ -51,16 +54,30 @@ class DataSyncSenderConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         try:
             try:
-                text_data_json = json.loads(text_data)
+                print('text_data', text_data)
+                text_data_json = convert_string_to_json(text_data)
+                print(0)
+                # text_data_json = text_data
             except Exception as e:
+                print(e)
                 text_data_json = {}
                 self.disconnect(
                     f'json convertion error, {str(e)}'
                 )
+                return
+            print(1, text_data_json, type(text_data_json))
+            # if text_data_json != type(dict):
+            #     print(2)
+            #     self.disconnect(
+            #         'Text json is not dict format'
+            #     )
+            #     return
+            print(3)
             async_to_sync(self.channel_layer.group_add)(
                 self.conversation_name,
                 self.channel_name,
             )
+            print('--text_data_json', type(text_data_json))
             websocket_connectivity(
                 text_json=text_data_json
             )
