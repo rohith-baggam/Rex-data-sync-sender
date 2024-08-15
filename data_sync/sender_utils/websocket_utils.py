@@ -8,9 +8,9 @@ from core.settings import (
 from data_sync.sender_utils import engine
 channel_layer = get_channel_layer()
 socket_response = {
-    'status_code': 400,
-    'message': "",
-    'buffer_data': None
+    # 'status_code': 400,
+    # 'message': "",
+    # 'buffer_data': ""
 }
 
 
@@ -27,14 +27,22 @@ def broadcast_data(messsage_object: dict) -> None:
             "data": messsage_object
         },
     )
+    print('data-broadcasted', {
+        "type": "sender_layer",
+        "conversations": conversation_name,
+        "data": messsage_object
+    })
 
 
 def websocket_connectivity(text_json: dict) -> None:
+    print('websocket_connectivity')
     function_name = str(text_json['data']['type']).lower()
+    print(1)
     # ? call engine methods to begin process
     if hasattr(engine, function_name):
         engine_function = getattr(engine, function_name)
         messsage_object = engine_function(text_json)
+        print('messsage_object', messsage_object)
         broadcast_data(messsage_object=messsage_object)
     else:
         # ? Incorrect type received
