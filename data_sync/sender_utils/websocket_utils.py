@@ -18,20 +18,26 @@ def broadcast_data(messsage_object: dict) -> None:
     """
         Broadcast data from here
     """
+
     conversation_name = 'data_sync'
-    async_to_sync(channel_layer.group_send)(
-        conversation_name,
-        {
+    try:
+        print('broadcast data messsage_object', messsage_object)
+        # if messsage_object['status_code'] == 200:
+        async_to_sync(channel_layer.group_send)(
+            conversation_name,
+            {
+                "type": "sender_layer",
+                "conversations": conversation_name,
+                "data": messsage_object
+            },
+        )
+        print('data-broadcasted', {
             "type": "sender_layer",
             "conversations": conversation_name,
             "data": messsage_object
-        },
-    )
-    print('data-broadcasted', {
-        "type": "sender_layer",
-        "conversations": conversation_name,
-        "data": messsage_object
-    })
+        })
+    except Exception as e:
+        print('broadcast_data', e)
 
 
 def websocket_connectivity(text_json: dict) -> None:
@@ -43,20 +49,22 @@ def websocket_connectivity(text_json: dict) -> None:
         engine_function = getattr(engine, function_name)
         messsage_object = engine_function(text_json)
         print('messsage_object', messsage_object)
+
         broadcast_data(messsage_object=messsage_object)
-    else:
-        # ? Incorrect type received
-        socket_response['status_code'] = 400
-        socket_response['message'] = "Incorrect command"
-        broadcast_data(
-            messsage_object=socket_response
-        )
+    # else:
+    #     # ? Incorrect type received
+    #     socket_response['status_code'] = 400
+    #     socket_response['message'] = "Incorrect command"
+    #     broadcast_data(
+    #         messsage_object=socket_response
+    #     )
 
 # {
 #     "STEP_1": "HAND_SHAKE",
 #     "STEP_2": "TOKEN_VERIFICATION",
 #     "STEP_3": "SECRET_KEY_VERIFICATION",
 #     "STEP_4": "SCHEMA_VERIFICATION",
-#     "SETP_5": "DATA_TRANFORMATION"
+#     "STEP_5": "DATA_INFORMATION",
+#     "SETP_6": "DATA_TRANSFORMATION"
 
 # }
