@@ -1,3 +1,8 @@
+
+import json
+from typing import Any
+from decimal import Decimal
+from django.db import models
 from core.settings import (
     DATA_SYNC_RECEIVER_TOKEN,
     SECRET_KEY
@@ -10,14 +15,15 @@ from django_data_seed.utils.json_compare import (
 )
 from .utils import (
     convert_string_to_json,
-    get_model_with_name
+    get_model_with_name,
+    get_model_full_path
 )
 from data_sync.sender_utils.cipher import (
     decrypt_data,
     encrypt_data
 )
 from django.apps import apps
-
+from uuid import UUID
 
 socket_response = {
     'status_code': 400,
@@ -120,24 +126,132 @@ def send_buffer_data(queryset):
     return socket_response
 
 
+def serialize_value(value, field):
+    """
+    Serialize a value based on its field type.
+
+    Args:
+        value: The value to serialize.
+        field: The field for which the value is being serialized.
+
+    Returns:
+        The serialized value.
+    """
+    def is_json_serializable(obj: Any) -> bool:
+        """Check if an object is JSON serializable."""
+        try:
+            json.dumps(obj)
+            return True
+        except (TypeError, OverflowError):
+            return False
+    return value if is_json_serializable(value) else str(value)
+    # if isinstance(value, Decimal):
+    #     return float(value)  # Convert Decimal to float for JSON compatibility
+    # if isinstance(value, UUID):
+    #     return str(value)  # Convert UUID to string
+    # if isinstance(field, models.UUIDField) and value is not None:
+    #     return str(value)  # Convert UUID to string
+    # if isinstance(field, (models.ForeignKey, models.OneToOneField)) and value is not None:
+    #     return value.pk  # Use the primary key of the related object
+    # if isinstance(field, models.ManyToManyField) and value is not None:
+    #     # List of primary keys for related objects
+    #     return [obj.pk for obj in value.all()]
+    # if isinstance(value, (int, str, bool, list, dict)):
+    #     return value  # Basic JSON-serializable types
+    # if value is None:
+    #     return None
+    # raise TypeError(f"Value of type {type(value)} is not JSON serializable")
+# def serialize_value(value, field):
+#     """
+#     Serialize a value based on its field type.
+
+#     Args:
+#         value: The value to serialize.
+#         field: The field for which the value is being serialized.
+
+#     Returns:
+#         The serialized value.
+#     """
+#     print('value, field', value, field)
+#     if isinstance(field, models.UUIDField) and value is not None:
+#         print(1)
+#         return str(value)  # Convert UUID to string
+#     if isinstance(field, models.ForeignKey) and value is not None:
+#         print(2)
+#         return value.pk  # Use the primary key of the related object
+#     if isinstance(field, models.OneToOneField) and value is not None:
+#         print(3)
+#         return value.pk  # Use the primary key of the related object
+#     if isinstance(field, models.ManyToManyField) and value is not None:
+#         # List of primary keys for related objects
+#         print(4)
+#         return [obj.pk for obj in value.all()]
+#     print(5)
+#     return value
+
+
 def get_model_pk_info():
     data_stat = []
-    [
-        data_stat.extend(
-            [
-                {
-                    "model_name": str(model),
-                    "pk": query.pk,
-                    "fields": values
-                } for (query, values) in zip(model.objects.all(), model.objects.all().values()) if query
-            ]
-        )
-        for model in apps.get_models()
-        if model._meta.app_label in [
-            app_config.name for app_config in apps.get_app_configs()
-        ]
-    ]
+    for model in apps.get_models():
+        if model._meta.app_label in [app_config.name for app_config in apps.get_app_configs()]:
+            # Get all instances of the model
+            for query in model.objects.all():
+                values = {}
+                for field in model._meta.get_fields():
+                    # Avoid handling reverse relationships and related managers
+                    if field.is_relation and not field.many_to_many:
+                        # Handle ForeignKey and OneToOneField
+                        if isinstance(field, (models.ForeignKey, models.OneToOneField)):
+                            related_object = getattr(query, field.name, None)
+                            if related_object:
+                                values[field.name] = related_object.pk
+                            else:
+                                values[field.name] = None
+                    elif field.many_to_many:
+                        # Handle ManyToManyField
+                        related_objects = getattr(query, field.name).all()
+                        values[field.name] = [
+                            obj.pk for obj in related_objects]
+                    else:
+                        # Handle other field types
+                        values[field.name] = serialize_value(
+                            getattr(query, field.name), field
+                        )
+
+                data_stat.append(
+                    {
+                        "model_name": get_model_full_path(model),
+                        "pk": query.pk,
+                        "fields": values
+                    }
+                )
     return data_stat
+# def get_model_pk_info():
+#     data_stat = []
+#     for model in apps.get_models():
+#         if model._meta.app_label in [
+#             app_config.name for app_config in apps.get_app_configs()
+#         ]:
+#             # Get all instances and their values
+#             for query in model.objects.all():
+#                 values = {
+#                     field.name: serialize_value(
+#                         getattr(query, field.name), model._meta.get_field(field.name))
+#                     for field in model._meta.get_fields()
+#                 }
+#                 print({
+#                     "model_name": get_model_full_path(model),
+#                     "pk": query.pk,
+#                     "fields": values
+#                 })
+#                 data_stat.append(
+#                     {
+#                         "model_name": get_model_full_path(model),
+#                         "pk": query.pk,
+#                         "fields": values
+#                     }
+#                 )
+#     return data_stat
 
 
 def get_count_of_all_instances():
@@ -156,7 +270,10 @@ def get_count_of_all_instances():
 def get_buffer_data_for_index(index):
     try:
         data = get_model_pk_info()[index]
-        socket_response['message'] = "10"
+        print('get_buffer_data_for_index', data)
+        socket_response['message'] = int(
+            (index/get_count_of_all_instances())*100
+        )
         socket_response['status_code'] = 200
         socket_response['buffer_data'] = encrypt_data(data)
     except Exception as e:

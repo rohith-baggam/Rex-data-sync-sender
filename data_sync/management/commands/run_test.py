@@ -15,7 +15,12 @@ from pprint import pprint
 class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
-        pprint(get_buffer_data_for_index(10))
+        pprint(get_buffer_data_for_index(438))
+        # Example usage
+        # from data_sync.models import DataSyncTestBooleanModel
+
+        # Print the full path of the model class
+        # print(self.get_model_full_path(DataSyncTestBooleanModel))
         # data = get_model_properties(
         #     model=DataSyncTestBooleanModel
         # )

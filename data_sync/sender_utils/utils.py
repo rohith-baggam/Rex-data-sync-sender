@@ -1,3 +1,4 @@
+from django.db import models
 import json
 import ast
 from django.apps import apps
@@ -48,3 +49,26 @@ def get_model_with_name(model_name):
         if model._meta.app_label in installed_apps and (not model_name or model_name in str(model))
     ]
     return models
+
+
+def get_model_full_path(cls: models.Model):
+    """
+    Extract the full path of a Django model class from its class reference.
+
+    Args:
+        cls (type): The model class.
+
+    Returns:
+        str: The full path of the model in the format 'app_label.ModelName'.
+    """
+    # Get the module name
+    # Get the module name
+    module_name = cls.__module__
+    # Get the class name
+    class_name = cls.__qualname__.split('.')[-1]
+
+    # The module_name is usually in the format 'app_name.models', so we extract 'app_name'
+    app_label = module_name.split('.')[-2]
+
+    # Return the formatted string
+    return f"{app_label}.{class_name}"

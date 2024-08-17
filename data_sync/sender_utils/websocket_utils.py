@@ -14,7 +14,7 @@ socket_response = {
 }
 
 
-def broadcast_data(messsage_object: dict) -> None:
+def broadcast_data(messsage_object: dict, socket_type: str) -> None:
     """
         Broadcast data from here
     """
@@ -26,13 +26,13 @@ def broadcast_data(messsage_object: dict) -> None:
         async_to_sync(channel_layer.group_send)(
             conversation_name,
             {
-                "type": "sender_layer",
+                "type": socket_type,
                 "conversations": conversation_name,
                 "data": messsage_object
             },
         )
         print('data-broadcasted', {
-            "type": "sender_layer",
+            "type": socket_type,
             "conversations": conversation_name,
             "data": messsage_object
         })
@@ -50,7 +50,8 @@ def websocket_connectivity(text_json: dict) -> None:
         messsage_object = engine_function(text_json)
         print('messsage_object', messsage_object)
 
-        broadcast_data(messsage_object=messsage_object)
+        broadcast_data(messsage_object=messsage_object,
+                       socket_type=function_name)
     # else:
     #     # ? Incorrect type received
     #     socket_response['status_code'] = 400

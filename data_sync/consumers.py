@@ -36,18 +36,18 @@ class DataSyncSenderConsumer(WebsocketConsumer):
                 self.channel_name
             )
 
-            async_to_sync(self.channel_layer.group_send)(
-                self.conversation_name,
-                {
-                    "type": "sender_layer",
-                    "conversations": self.conversation_name,
-                    "data": {
-                        "status_code": 200,
-                        "message": "Connected",
-                        "buffer_data": None
-                    }
-                }
-            )
+            # async_to_sync(self.channel_layer.group_send)(
+            #     self.conversation_name,
+            #     {
+            #         "type": "sender_layer",
+            #         "conversations": self.conversation_name,
+            #         "data": {
+            #             "status_code": 200,
+            #             "message": "Connected",
+            #             "buffer_data": None
+            #         }
+            #     }
+            # )
         except Exception as e:
             self.close(code=f"something went wrong in conncet, {str(e)}")
             # Use appropriate WebSocket close code
@@ -87,6 +87,21 @@ class DataSyncSenderConsumer(WebsocketConsumer):
         return
 
     def sender_layer(self, event):
+        self.send(text_data=json.dumps(event))
+
+    def token_verification(self, event):
+        self.send(text_data=json.dumps(event))
+
+    def secret_key_verification(self, event):
+        self.send(text_data=json.dumps(event))
+
+    def schema_verification(self, event):
+        self.send(text_data=json.dumps(event))
+
+    def data_transformation(self, event):
+        self.send(text_data=json.dumps(event))
+
+    def data_information(self, event):
         self.send(text_data=json.dumps(event))
 
 # class DataSyncSenderConsumer(WebsocketConsumer):
