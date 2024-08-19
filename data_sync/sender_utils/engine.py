@@ -16,7 +16,8 @@ from django_data_seed.utils.json_compare import (
 from .utils import (
     convert_string_to_json,
     get_model_with_name,
-    get_model_full_path
+    get_model_full_path,
+    dump_data
 )
 from data_sync.sender_utils.cipher import (
     decrypt_data,
@@ -267,9 +268,39 @@ def get_count_of_all_instances():
     )
 
 
+def load_json_dump(filename='dump_data.json'):
+    """
+    Load a JSON dump file and return its contents as a list of objects.
+
+    Args:
+        filename (str): The path to the JSON dump file. Defaults to 'dump_data.json'.
+
+    Returns:
+        list: A list of objects parsed from the JSON file.
+    """
+    try:
+        with open(filename, 'r') as file:
+            # Load the JSON data from the file
+            data = json.load(file)
+            # Ensure data is a list
+            if isinstance(data, list):
+                return data
+            else:
+                raise ValueError("The JSON file does not contain a list.")
+    except FileNotFoundError:
+        print(f"Error: The file '{filename}' does not exist.")
+        return []
+    except json.JSONDecodeError:
+        print(f"Error: The file '{filename}' is not a valid JSON file.")
+        return []
+    except ValueError as e:
+        print(f"Error: {e}")
+        return []
+
+
 def get_buffer_data_for_index(index):
     try:
-        data = get_model_pk_info()[index]
+        data = load_json_dump()[index]
         print('get_buffer_data_for_index', data)
         socket_response['message'] = int(
             (index/get_count_of_all_instances())*100
@@ -285,9 +316,11 @@ def get_buffer_data_for_index(index):
 def data_information(text_data):
     socket_response['message'] = "Transforing model information"
     socket_response['status_code'] = 200
-    socket_response['model_meta_data'] = encrypt_data(
-        get_count_of_all_instances()
-    )
+    dump_data()
+    socket_response['model_meta_data'] = encrypt_data(len(
+        load_json_dump(
+        )
+    ))
     return socket_response
 
 

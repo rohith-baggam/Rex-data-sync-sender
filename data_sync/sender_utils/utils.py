@@ -1,3 +1,6 @@
+from io import StringIO
+from django.core.management import call_command
+from core import settings
 from django.db import models
 import json
 import ast
@@ -72,3 +75,38 @@ def get_model_full_path(cls: models.Model):
 
     # Return the formatted string
     return f"{app_label}.{class_name}"
+
+
+def dump_data():
+    # Get installed apps
+    installed_apps = settings.INSTALLED_APPS
+
+    # Filter out third-party apps by excluding apps that do not start with your project name or follow a specific pattern
+    custom_apps = [app for app in installed_apps if not app.startswith(
+        'third_party_prefix')]
+
+    # Remove apps that are not relevant
+    # For example, 'django.contrib.sites', 'rest_framework', etc., if you do not want to dump data for these
+    # You might also want to exclude system or admin apps
+    custom_apps = [app for app in custom_apps if not app.startswith(
+        'django.') and not app.startswith('rest_framework')]
+
+    all_data = []
+
+    # Iterate through your custom apps and dump data
+    for app in custom_apps:
+        app_name = app.split('.')[-1]
+
+        # Create a StringIO object to capture the output
+        output = StringIO()
+
+        # Call the 'dumpdata' command
+        call_command('dumpdata', app_name, format='json', stdout=output)
+
+        # Append the data from StringIO to the all_data list
+        app_data = json.loads(output.getvalue())
+        all_data.extend(app_data)
+
+    # Write all collected data to a single JSON file
+    with open('dump_data.json', 'w') as output_file:
+        json.dump(all_data, output_file, indent=4)

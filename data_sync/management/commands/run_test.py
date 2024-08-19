@@ -1,5 +1,9 @@
 from django.core.management.base import BaseCommand
-from data_sync.sender_utils.engine import get_buffer_data_for_index
+from data_sync.sender_utils.engine import (
+    get_buffer_data_for_index,
+    data_information,
+    load_json_dump
+)
 from data_sync.sender_utils.schema_verification import (
     get_model_properties
 )
@@ -7,7 +11,10 @@ from data_sync.models import DataSyncTestBooleanModel
 from data_sync.sender_utils.websocket_utils import (
     websocket_connectivity
 )
-from data_sync.sender_utils.utils import convert_string_to_json
+from data_sync.sender_utils.utils import (
+    convert_string_to_json,
+    dump_data
+)
 from data_sync.sender_utils.cipher import encrypt_data
 from pprint import pprint
 
@@ -15,7 +22,9 @@ from pprint import pprint
 class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
-        pprint(get_buffer_data_for_index(438))
+        # pprint(get_buffer_data_for_index(438))
+        # dump_data()
+        print(get_buffer_data_for_index(10))
         # Example usage
         # from data_sync.models import DataSyncTestBooleanModel
 
