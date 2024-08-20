@@ -104,6 +104,9 @@ class DataSyncSenderConsumer(WebsocketConsumer):
     def data_information(self, event):
         self.send(text_data=json.dumps(event))
 
+    def data_transformation_successful(self, event):
+        self.send(text_data=json.dumps(event))
+
 # class DataSyncSenderConsumer(WebsocketConsumer):
 
 #     """

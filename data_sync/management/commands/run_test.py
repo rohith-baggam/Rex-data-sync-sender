@@ -22,9 +22,10 @@ from pprint import pprint
 class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
+        print(len(load_json_dump()))
         # pprint(get_buffer_data_for_index(438))
         # dump_data()
-        print(get_buffer_data_for_index(10))
+        # print(get_buffer_data_for_index(10))
         # Example usage
         # from data_sync.models import DataSyncTestBooleanModel
 

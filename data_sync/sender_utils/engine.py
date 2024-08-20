@@ -1,5 +1,5 @@
-
 import json
+import inspect
 from typing import Any
 from decimal import Decimal
 from django.db import models
@@ -25,6 +25,7 @@ from data_sync.sender_utils.cipher import (
 )
 from django.apps import apps
 from uuid import UUID
+
 
 socket_response = {
     'status_code': 400,
@@ -146,49 +147,6 @@ def serialize_value(value, field):
         except (TypeError, OverflowError):
             return False
     return value if is_json_serializable(value) else str(value)
-    # if isinstance(value, Decimal):
-    #     return float(value)  # Convert Decimal to float for JSON compatibility
-    # if isinstance(value, UUID):
-    #     return str(value)  # Convert UUID to string
-    # if isinstance(field, models.UUIDField) and value is not None:
-    #     return str(value)  # Convert UUID to string
-    # if isinstance(field, (models.ForeignKey, models.OneToOneField)) and value is not None:
-    #     return value.pk  # Use the primary key of the related object
-    # if isinstance(field, models.ManyToManyField) and value is not None:
-    #     # List of primary keys for related objects
-    #     return [obj.pk for obj in value.all()]
-    # if isinstance(value, (int, str, bool, list, dict)):
-    #     return value  # Basic JSON-serializable types
-    # if value is None:
-    #     return None
-    # raise TypeError(f"Value of type {type(value)} is not JSON serializable")
-# def serialize_value(value, field):
-#     """
-#     Serialize a value based on its field type.
-
-#     Args:
-#         value: The value to serialize.
-#         field: The field for which the value is being serialized.
-
-#     Returns:
-#         The serialized value.
-#     """
-#     print('value, field', value, field)
-#     if isinstance(field, models.UUIDField) and value is not None:
-#         print(1)
-#         return str(value)  # Convert UUID to string
-#     if isinstance(field, models.ForeignKey) and value is not None:
-#         print(2)
-#         return value.pk  # Use the primary key of the related object
-#     if isinstance(field, models.OneToOneField) and value is not None:
-#         print(3)
-#         return value.pk  # Use the primary key of the related object
-#     if isinstance(field, models.ManyToManyField) and value is not None:
-#         # List of primary keys for related objects
-#         print(4)
-#         return [obj.pk for obj in value.all()]
-#     print(5)
-#     return value
 
 
 def get_model_pk_info():
@@ -227,32 +185,6 @@ def get_model_pk_info():
                     }
                 )
     return data_stat
-# def get_model_pk_info():
-#     data_stat = []
-#     for model in apps.get_models():
-#         if model._meta.app_label in [
-#             app_config.name for app_config in apps.get_app_configs()
-#         ]:
-#             # Get all instances and their values
-#             for query in model.objects.all():
-#                 values = {
-#                     field.name: serialize_value(
-#                         getattr(query, field.name), model._meta.get_field(field.name))
-#                     for field in model._meta.get_fields()
-#                 }
-#                 print({
-#                     "model_name": get_model_full_path(model),
-#                     "pk": query.pk,
-#                     "fields": values
-#                 })
-#                 data_stat.append(
-#                     {
-#                         "model_name": get_model_full_path(model),
-#                         "pk": query.pk,
-#                         "fields": values
-#                     }
-#                 )
-#     return data_stat
 
 
 def get_count_of_all_instances():
@@ -298,15 +230,37 @@ def load_json_dump(filename='dump_data.json'):
         return []
 
 
+def data_transformation_successful(text_data):
+    socket_response['status_code'] = 200
+    socket_response['message'] = "Data Transformation is Done Successfully"
+    from data_sync.sender_utils.websocket_utils import broadcast_data
+    broadcast_data(
+        messsage_object=socket_response,
+        socket_type=str(
+            inspect.currentframe(
+            ).f_code.co_name
+        ).upper()
+    )
+    return socket_response
+
+
 def get_buffer_data_for_index(index):
     try:
-        data = load_json_dump()[index]
-        print('get_buffer_data_for_index', data)
-        socket_response['message'] = int(
-            (index/get_count_of_all_instances())*100
-        )
-        socket_response['status_code'] = 200
-        socket_response['buffer_data'] = encrypt_data(data)
+
+        all_instance = len(load_json_dump())
+        print('index/all_instance', str(index), str(all_instance))
+        if index <= all_instance:
+            data = load_json_dump()[index]
+            print('get_buffer_data_for_index', data)
+            percentage = int(
+                (int(index+1)/all_instance)*100
+            )
+            socket_response['message'] = f'{percentage} %'
+            socket_response['instance'] = f"{str(index+1)}/{str(all_instance)}"
+            socket_response['status_code'] = 200
+            socket_response['buffer_data'] = encrypt_data(data)
+        else:
+            return data_transformation_successful()
     except Exception as e:
         socket_response['message'] = f"Incorrect Index, {str(e)}"
         socket_response['status_code'] = 400
