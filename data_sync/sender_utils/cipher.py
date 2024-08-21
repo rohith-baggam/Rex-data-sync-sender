@@ -7,7 +7,16 @@ import os
 import json
 
 
-def encrypt_data(plain_text):
+def encrypt_data(plain_text: str) -> str:
+    """
+        Args:
+        -   plain_text : str
+        Info:
+        -   This function takes plain text or 
+            string value and encrypts data with django project Secret key
+        Result:
+        -   Encrypted String
+    """
     # ? Convert the plain text (could be dict, list, etc.) to JSON string and then to bytes
     if not isinstance(plain_text, str):
         plain_text = json.dumps(plain_text)
@@ -30,7 +39,18 @@ def encrypt_data(plain_text):
     return encrypted_data
 
 
-def decrypt_data(encrypted_data):
+def decrypt_data(encrypted_data: str) -> str:
+    """
+        Args:
+        -   encrypted_data : str
+        Info:
+        -   This function takes encrypted string and 
+            decrypts data with django project Secret key
+        Result:
+        -   String (Decrypted string)
+        Note: 
+        -   The data should be encrypted with same SECRET_KEY which is used for decryption
+    """
     # ? Decode the base64 encoded data
     encrypted_bytes = base64.b64decode(encrypted_data.encode('utf-8'))
 

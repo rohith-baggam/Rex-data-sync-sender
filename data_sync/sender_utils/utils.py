@@ -64,49 +64,48 @@ def get_model_full_path(cls: models.Model):
     Returns:
         str: The full path of the model in the format 'app_label.ModelName'.
     """
-    # Get the module name
-    # Get the module name
+    # ? Get the module name
     module_name = cls.__module__
-    # Get the class name
+    # ? Get the class name
     class_name = cls.__qualname__.split('.')[-1]
 
-    # The module_name is usually in the format 'app_name.models', so we extract 'app_name'
+    # ? The module_name is usually in the format 'app_name.models', so we extract 'app_name'
     app_label = module_name.split('.')[-2]
 
-    # Return the formatted string
+    # ? Return the formatted string
     return f"{app_label}.{class_name}"
 
 
 def dump_data():
-    # Get installed apps
+    # ? Get installed apps
     installed_apps = settings.INSTALLED_APPS
 
-    # Filter out third-party apps by excluding apps that do not start with your project name or follow a specific pattern
+    # ? Filter out third-party apps by excluding apps that do not start with your project name or follow a specific pattern
     custom_apps = [app for app in installed_apps if not app.startswith(
         'third_party_prefix')]
 
-    # Remove apps that are not relevant
-    # For example, 'django.contrib.sites', 'rest_framework', etc., if you do not want to dump data for these
-    # You might also want to exclude system or admin apps
+    # ? Remove apps that are not relevant
+    # ? For example, 'django.contrib.sites', 'rest_framework', etc., if you do not want to dump data for these
+    # ? You might also want to exclude system or admin apps
     custom_apps = [app for app in custom_apps if not app.startswith(
         'django.') and not app.startswith('rest_framework')]
 
     all_data = []
 
-    # Iterate through your custom apps and dump data
+    # ? Iterate through your custom apps and dump data
     for app in custom_apps:
         app_name = app.split('.')[-1]
 
-        # Create a StringIO object to capture the output
+        # ? Create a StringIO object to capture the output
         output = StringIO()
 
-        # Call the 'dumpdata' command
+        # ? Call the 'dumpdata' command
         call_command('dumpdata', app_name, format='json', stdout=output)
 
-        # Append the data from StringIO to the all_data list
+        # ? Append the data from StringIO to the all_data list
         app_data = json.loads(output.getvalue())
         all_data.extend(app_data)
 
-    # Write all collected data to a single JSON file
+    # ? Write all collected data to a single JSON file
     with open('dump_data.json', 'w') as output_file:
         json.dump(all_data, output_file, indent=4)
