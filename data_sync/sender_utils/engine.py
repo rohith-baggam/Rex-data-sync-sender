@@ -21,13 +21,6 @@ from data_sync.sender_utils.cipher import (
 )
 
 
-socket_response = {
-    'status_code': 400,
-    'message': "",
-    'buffer_data': None
-}
-
-
 def token_verification(text_json: dict) -> dict:
     """
         Arg:
@@ -37,6 +30,7 @@ def token_verification(text_json: dict) -> dict:
         Result:
             - A dict which contains broadcast information
     """
+    socket_response = {}
     if 'token' not in text_json:
         socket_response['status_code'] = 400
         socket_response['message'] = "Token not found"
@@ -50,7 +44,7 @@ def token_verification(text_json: dict) -> dict:
     return socket_response
 
 
-def secret_key_verification(text_json: dict) -> tuple:
+def secret_key_verification(text_json: dict) -> dict:
     """
         Arg:
             - text_json : Payload from the socket
@@ -59,6 +53,7 @@ def secret_key_verification(text_json: dict) -> tuple:
         Result:
             - A dict which contains broadcast information
     """
+    socket_response = {}
     if not text_json.get('data') or not text_json['data'].get('SECRET_KEY'):
         socket_response['status_code'] = 400
         socket_response["message"] = "Secret key not found"
@@ -74,7 +69,7 @@ def secret_key_verification(text_json: dict) -> tuple:
     return socket_response
 
 
-def schema_verification(text_json: dict) -> tuple:
+def schema_verification(text_json: dict) -> dict:
     """
         Arg:
             - text_json : Payload from the socket
@@ -85,7 +80,9 @@ def schema_verification(text_json: dict) -> tuple:
         Result:
             - A dict which contains broadcast information
     """
+    socket_response = {}
     try:
+
         if not text_json.get('data') or not text_json['data'].get('model_meta_data'):
             socket_response['status_code'] = 400
             socket_response["message"] = "Model Meta Data not found"
@@ -149,6 +146,7 @@ def load_json_dump(filename: str = 'dump_data.json') -> list:
 
 
 def data_transformation_successful(text_data: dict) -> dict:
+    socket_response = {}
     socket_response['status_code'] = 200
     socket_response['message'] = "Data Transformation is Done Successfully"
     # ? to avoid circular dependency import function inside current function
@@ -164,6 +162,7 @@ def data_transformation_successful(text_data: dict) -> dict:
 
 
 def get_buffer_data_for_index(index: int) -> dict:
+    socket_response = {}
     try:
         # ? length of instances to transfor
         all_instance = len(load_json_dump())
@@ -183,7 +182,7 @@ def get_buffer_data_for_index(index: int) -> dict:
             socket_response['status_code'] = 200
             socket_response['buffer_data'] = encrypt_data(data)
         else:
-            return data_transformation_successful()
+            return data_transformation_successful(text_data={})
     except Exception as e:
         socket_response['message'] = f"Incorrect Index, {str(e)}"
         socket_response['status_code'] = 400
@@ -191,6 +190,7 @@ def get_buffer_data_for_index(index: int) -> dict:
 
 
 def data_information(text_data: dict) -> dict:
+    socket_response = {}
     socket_response['message'] = "Transforing model information"
     socket_response['status_code'] = 200
     # ? dump entire database into json
@@ -204,6 +204,7 @@ def data_information(text_data: dict) -> dict:
 
 
 def data_transformation(text_data: dict) -> dict:
+    socket_response = {}
     try:
         model_meta_data = text_data['data']['model_meta_data']
         if 'index' not in model_meta_data:
