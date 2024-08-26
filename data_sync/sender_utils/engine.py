@@ -86,6 +86,8 @@ def schema_verification(text_json: dict) -> tuple:
             - A dict which contains broadcast information
     """
     try:
+        if 'instance' in socket_response:
+            socket_response.pop('instance')
         if not text_json.get('data') or not text_json['data'].get('model_meta_data'):
             socket_response['status_code'] = 400
             socket_response["message"] = "Model Meta Data not found"
@@ -110,7 +112,7 @@ def schema_verification(text_json: dict) -> tuple:
             obj2=receiver_model_meta_data
         ):
             socket_response['status_code'] = 200
-            socket_response["message"] = "Model Meta Data Matched sucessfully"
+            socket_response["message"] = "Schema verification in action."
             return socket_response
         socket_response['status_code'] = 400
         socket_response["message"] = "Model Meta Data Properties are not matching"
@@ -150,15 +152,11 @@ def load_json_dump(filename: str = 'dump_data.json') -> list:
 
 def data_transformation_successful(text_data: dict) -> dict:
     socket_response['status_code'] = 200
-    socket_response['message'] = "Data Transformation is Done Successfully"
+    socket_response['message'] = "A perfect landing and a synchronized database mission! success from start to finish."
     # ? to avoid circular dependency import function inside current function
     from data_sync.sender_utils.websocket_utils import broadcast_data
     broadcast_data(
-        messsage_object=socket_response,
-        socket_type=str(
-            inspect.currentframe(
-            ).f_code.co_name
-        ).upper()
+        messsage_object=socket_response
     )
     return socket_response
 
