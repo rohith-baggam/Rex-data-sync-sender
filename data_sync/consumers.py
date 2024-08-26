@@ -8,9 +8,10 @@ import json
 from data_sync.sender_utils.utils import (
     convert_string_to_json
 )
+from django_data_seed.utils.colorama_theme import StdoutTextTheme
 
 
-class DataSyncSenderConsumer(WebsocketConsumer):
+class DataSyncSenderConsumer(WebsocketConsumer, StdoutTextTheme):
     """
         This websocket does sender action
     """
@@ -22,35 +23,14 @@ class DataSyncSenderConsumer(WebsocketConsumer):
     def connect(self):
         try:
             self.accept()
-            query_string_bytes = self.scope.get("query_string", b"")
-            query_string = parse_qs(query_string_bytes.decode("utf-8"))
-            token_info = query_string.get("token", [None])[0]
-
-            # if not token_info:
-            #     self.close(code=4000)  # Use appropriate WebSocket close code
-            #     return
-
             self.conversation_name = "data_sync"
             async_to_sync(self.channel_layer.group_add)(
                 self.conversation_name,
                 self.channel_name
             )
 
-            # async_to_sync(self.channel_layer.group_send)(
-            #     self.conversation_name,
-            #     {
-            #         "type": "sender_layer",
-            #         "conversations": self.conversation_name,
-            #         "data": {
-            #             "status_code": 200,
-            #             "message": "Connected",
-            #             "buffer_data": None
-            #         }
-            #     }
-            # )
         except Exception as e:
             self.close(code=f"something went wrong in conncet, {str(e)}")
-            # Use appropriate WebSocket close code
             print(f"Connection error: {e}")
 
     def receive(self, text_data=None, bytes_data=None):
@@ -59,31 +39,15 @@ class DataSyncSenderConsumer(WebsocketConsumer):
                 text_data_json = convert_string_to_json(text_data)
 
                 if not isinstance(text_data_json, dict):
-                    # Use appropriate WebSocket close code
                     self.close(code=f"Incorrect format, {str(e)}")
                     return
 
                 websocket_connectivity(text_json=text_data_json)
         except Exception as e:
-            # Use appropriate WebSocket close code
             self.close(code=f"something went wrong in recieve, {str(e)}")
             print(f"Receive error: {e}")
 
     def disconnect(self, close_code=None):
-        # if self.conversation_name:
-        #     async_to_sync(self.channel_layer.group_discard)(
-        #         self.conversation_name,
-        #         self.channel_name
-        #     )
-        #     async_to_sync(self.channel_layer.group_send)(
-        #         self.conversation_name,
-        #         {
-        #             "type": "sender_layer",
-        #             "conversations": self.conversation_name,
-        #             "message": "socket disconnected"
-        #         }
-        #     )
-        # print("WebSocket is disconnected", close_code)
         return
 
     def sender_layer(self, event):
