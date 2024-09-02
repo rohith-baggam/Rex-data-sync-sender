@@ -122,7 +122,7 @@ For any issues or questions, open an issue on the GitHub repository.
 
 **Rohith Baggam**
 
-LinkedIn: [LinkedIn Profile](https://www.linkedin.com/in/rohith-baggam/)
+LinkedIn: [LinkedIn Profile](https://www.linkedin.com/in/rohith-raj-baggam/)
 
 ## 🎨 Frontend Design
 
